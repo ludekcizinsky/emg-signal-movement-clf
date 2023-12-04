@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "emg-signal-movement-clf"
+version = "0.1.0"
+description = "Machine Learning pipeline for movement detection based on raw EMG signal."
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.10.13"
+seaborn = "^0.13.0"
+pandas = "^2.1.3"
+numpy = "^1.26.2"
+scikit-learn = "^1.3.2"
+notebook = "^7.0.6"
+ipykernel = "^6.27.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
