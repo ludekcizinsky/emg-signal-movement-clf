@@ -38,3 +38,7 @@ To reproduce all results, run the following command:
 ```bash
 poetry run main.py
 ```
+
+## 📑 Related Work
+
+- [A Robust and Accurate Deep Learning based Pattern Recognition Framework for Upper Limb Prosthesis using sEMG](https://arxiv.org/pdf/2106.02463.pdf)
