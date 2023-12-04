@@ -167,6 +167,8 @@ cython_debug/
 data/action_list.npy
 data/EMG.csv
 data/Kinematics.csv
+*.mat
+*.npy
 
 # Figures
 figures/hand_model.png
