@@ -1,4 +1,64 @@
 import numpy as np
+import zipfile
+import os
+from tqdm import tqdm
+import scipy.io as sio
+
+def unzip_and_remove(zip_folder):
+    """
+    Unzips all zip files in the specified folder and removes the original zip files.
+
+    Args:
+        zip_folder (str): Path to the folder containing the zip files.   
+    """
+    # Get a list of all zip files in the specified folder
+    zip_files = [f for f in os.listdir(zip_folder) if f.endswith('.zip')]
+
+    # Iterate through each zip file
+    for zip_file in tqdm(zip_files):
+        zip_path = os.path.join(zip_folder, zip_file)
+        unzip_path = os.path.join(zip_folder, zip_file.replace('.zip', ''))
+
+        # Unzip the file
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(unzip_path)
+
+        # Remove the original zip file
+        os.remove(zip_path)
+
+def parse_exercise_data(datapath, subject_ids, exercise_id):
+    """
+    Parse the data for the given subject ids and exercise id.
+
+    Args:
+        datapath (str): path to the data folder
+        subject_ids (list): list of subject ids
+        exercise_id (int): exercise id
+    
+    Returns:
+        all_data (np.ndarray): array of shape (n_subjects, emg (10) + stimulus + repetition = 12) containing the data
+    """
+
+
+    # Load the data for each subject
+    all_data = []
+    for subject_id in tqdm(subject_ids, desc=f"Loading data for exercise {exercise_id}"):
+
+        # Load the data a dictionary
+        filepath = os.path.join(datapath, f"s{subject_id}" ,f'S{subject_id}_A1_E{exercise_id}.mat')
+        data = sio.loadmat(filepath)
+
+        # Choose the relevant columns
+        emg, stimulus, repetition, subject_id_arr = data['emg'], data['restimulus'], data['rerepetition'], np.repeat(subject_id, data['emg'].shape[0]).reshape(-1, 1)
+        data = np.concatenate([emg, stimulus, repetition, subject_id_arr], axis=1)
+
+        # Append to the list
+        all_data.append(data)
+
+    # Concatenate the list 
+    all_data = np.concatenate(all_data, axis=0)
+
+    return all_data
 
 
 # ------- Exercise 11 utils functions
