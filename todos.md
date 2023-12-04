@@ -1,6 +1,6 @@
 In this mini project, we are supposed to do the following tasks:
 
-- [ ] Visualize and preprocess the data. 
+- [ ] Visualize and preprocess the data. TODO: Do people with higher BMI have higher EMG?
 
 - [ ] Perform sliding windows (choose a reasonable window width and sliding step) and
 explain your choice.
