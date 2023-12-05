@@ -41,4 +41,9 @@ poetry run main.py
 
 ## 📑 Related Work
 
+*State-of-the-art models*:
 - [A Robust and Accurate Deep Learning based Pattern Recognition Framework for Upper Limb Prosthesis using sEMG](https://arxiv.org/pdf/2106.02463.pdf)
+
+*NinaPro DB1 information:*
+- [Characterization of a Benchmark Database for Myoelectric Movement Classification](https://ieeexplore.ieee.org/document/6825822?arnumber=6825822)
+- [Electromyography data for non-invasive naturally-controlled robotic hand prostheses](https://www.nature.com/articles/sdata201453)
