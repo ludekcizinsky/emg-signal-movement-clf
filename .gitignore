@@ -169,6 +169,7 @@ data/EMG.csv
 data/Kinematics.csv
 *.mat
 *.npy
+*.pkl
 
 # Figures
 figures/hand_model.png

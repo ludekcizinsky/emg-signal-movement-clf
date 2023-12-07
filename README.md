@@ -1,7 +1,9 @@
 ## 🤌 emg-signal-movement-clf
 Hand movement classification from EMG signals across different subjects.
 
-## ⚙️ Setup
+## ⚙️ Setup (Optional)
+
+Below, we outlined instructtions on how to setup the project. This is optional, as the project can be run easily run within your own python environment. However, you might run into some errors due to different package versions etc.
 
 To reproduce all results, this notebook should be run with the correct **Python version** inside the specified **virtual environment** to use all packages with the correct version.
 
@@ -33,11 +35,7 @@ poetry run python -m ipykernel install --user --name=emg-signal-movement-clf
 
 ## 🔗 Reproduce
 
-To reproduce all results, run the following command:
-
-```bash
-poetry run main.py
-```
+You can check the [preprocessing pipeline](notebooks/preprocessing.ipynb) notebook to see how the data was preprocessed and the [classification pipeline](notebooks/classification.ipynb) notebook to see how the classification was performed. Each notebook is self-contained and explains in detail how the results were obtained.
 
 ## 📑 Related Work
 
