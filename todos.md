@@ -2,10 +2,11 @@ In this mini project, we are supposed to do the following tasks:
 
 - [ ] Visualize and preprocess the data. TODO: Do people with higher BMI have higher EMG?
 
-- [ ] Perform sliding windows (choose a reasonable window width and sliding step) and
-explain your choice.
+> Furthermore, regression analysis on the classification results reveals that classification accuracy is negatively correlated with a subject’s Body Mass Index (BMI).
 
 - [ ] Split the data into training, validation, and testing sets for each subject. Why do we need the different datasets?
+
+- [ ] Perform sliding windows (choose a reasonable window width and sliding step) and explain your choice.
 
 - [ ] Extract the same set of features across 10 different subjects. Look at the typical
 values of those features across the same set of movements for different subjects.
