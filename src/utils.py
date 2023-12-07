@@ -1,10 +1,11 @@
 import numpy as np
+import pandas as pd
 import zipfile
 import os
 from tqdm import tqdm
 import scipy.io as sio
 
-def unzip_and_remove(zip_folder):
+def unzip_and_remove(zip_folder : str) -> None:
     """
     Unzips all zip files in the specified folder and removes the original zip files.
 
@@ -26,7 +27,7 @@ def unzip_and_remove(zip_folder):
         # Remove the original zip file
         os.remove(zip_path)
 
-def parse_exercise_data(datapath, subject_ids, exercise_id):
+def parse_exercise_data(datapath : str, subject_ids : list, exercise_id : int) -> np.ndarray:
     """
     Parse the data for the given subject ids and exercise id.
 
@@ -61,7 +62,197 @@ def parse_exercise_data(datapath, subject_ids, exercise_id):
     return all_data
 
 
-# ------- Exercise 11 utils functions
+def train_val_test_split(df : pd.DataFrame, val : list, test: list) -> pd.DataFrame:
+    """
+    Adds a new column to the df denoting to which split given
+    timepoint belongs.
+
+    Args:
+        df (pd.DataFrame): dataframe containing the data
+        val (int): ids of repetitions used for validation
+        test (int): ids of repetitions used for testing
+
+    Returns:
+        df (pd.DataFrame): dataframe containing the data with the new column 
+    """
+
+    # Create a new column and assign to all timepoints default value 'train'
+    df['Split'] = 'train'
+
+    # Set the split column to 'val' for the validation set
+    df.loc[df['Repetition'].isin(val), 'Split'] = 'val'
+
+    # Set the split column to 'test' for the test set
+    df.loc[df['Repetition'].isin(test), 'Split'] = 'test'
+
+    # Set the rest to a temporary value 'rest'
+    df.loc[df['Repetition'] == 0, 'Split'] = None
+
+    # Forward fill NaN values = fill the 'rest' values with the previous value
+    # E.g. rest rest train train -> train train train train
+    df['Split'] = df['Split'].ffill()
+
+    # Drop the NaN values which will only drop the first rest period
+    df = df.dropna()
+
+    return df
+
+def extract_time_windows(emg, labels, sampling_frequency, win_len, step) -> tuple[np.array, np.array]:
+
+    """
+    This function is defined to extract time windows from the given data
+
+    Args:
+        emg (numpy array): array containing the EMG data of shape (n_samples, n_channels)
+        labels (numpy array): array containing the labels of shape (n_samples, )
+        sampling_frequency (int): sampling frequency of the EMG data
+        win_len (float): length of the window in seconds
+        step (float): step between two consecutive windows in seconds
+    
+    Returns:
+        emg_windows (numpy array): array containing the EMG data in windows of shape (n_windows, win_len, n_channels)
+        labels_windows (numpy array): array containing the labels in windows of shape (n_windows, )
+    """
+
+    # Obtain the number of samples and channels
+    n,m = emg.shape
+
+    # Define the window length based on the sampling frequency
+    win_len = int(win_len*sampling_frequency)
+
+    # Definet the start and end points of the windows
+    start_points = np.arange(0, n-win_len, int(step*sampling_frequency))
+    end_points = start_points + win_len
+
+    # Init the final variables to be returned
+    emg_windows = np.zeros((len(start_points), win_len, m))
+    labels_windows = [] 
+
+    # Now assign the corresponding timepont to the given windows
+    for i in range(len(start_points)):
+        emg_windows[i,:,:] = emg[start_points[i]:end_points[i],:]
+        labels_windows.append(labels[start_points[i]])
+     
+    return emg_windows, np.array(labels_windows)
+
+def calc_fft_power(emg_windows : np.array, sampling_frequency : int) -> tuple[np.array, np.array]:
+    """
+    This function calculates the power of the FFT of the given EMG data.
+
+    Args:
+        emg_windows (numpy array): EMG data in sliding of shape (n_windows, time, n_channels)
+        sampling_frequency (float): sampling frequency of the EMG data
+    
+    Returns:
+        freqs (numpy array): frequency bins
+        fft_power (numpy array): power spectrum of the FFT of the EMG data
+    """
+    # Number of points in each window
+    N = emg_windows.shape[1]
+
+    # Frequency bins
+    freqs = np.fft.rfftfreq(N, 1/sampling_frequency)  
+
+    # Fast Fourier Transform (FFT)
+    fft_vals = np.fft.rfft(emg_windows, axis=1)
+    fft_power = np.abs(fft_vals) ** 2  # Power spectrum
+
+    return freqs[1:], fft_power[:,1:,:]
+
+
+def extract_features(emg_windows : np.ndarray, sampling_frequency : int) -> np.ndarray:
+    """
+    This function extracts features from raw EMG data. 
+    
+    Args:
+        emg_windows (numpy array): EMG data in sliding of shape (n_windows, time, n_channels)
+        sampling_frequency (int): sampling frequency of EMG data
+    
+    Returns:
+        X (numpy array): features of shape (n_windows, n_features)
+    """
+    # Mean absolute value (MAV), axis=1 means mean along the time axis for each window
+    mav = np.mean(np.abs(emg_windows), axis=1)
+
+    # Maximum absolute Value (MaxAV)
+    maxav = np.max(np.abs(emg_windows), axis=1)
+
+    # Standard Deviation (STD)
+    std = np.std(emg_windows, axis=1)
+
+    # Root mean square (RMS)
+    rms = np.sqrt(np.mean(emg_windows ** 2, axis=1))
+
+    # Wavelength (WL)
+    wl = np.sum(np.abs(np.diff(emg_windows, axis=1)), axis=1) 
+
+    # Zero crossing (ZC) (hint: you can use np.diff and np.sign to evaluate the zero crossing, then sum the occurance)
+    zc = np.sum(np.diff(np.sign(emg_windows), axis=1) != 0, axis=1)
+
+    # Slope sign changes (SSC)
+    diff = np.diff(emg_windows, axis=1)
+    ssc = np.sum(np.diff(np.sign(diff), axis=1) != 0, axis=1)
+
+    # Get frequency and spectrogram power 
+    freqs, fft_power = calc_fft_power(emg_windows, sampling_frequency=sampling_frequency)
+
+    # Mean power 
+    mean_power = np.mean(fft_power, axis=1)
+
+    # Total power
+    tot_power = np.sum(fft_power, axis=1)
+
+    # Mean frequency (sum of the product of spectrogram power and frequency, divided by total sum of spectrogram power)
+    freqs_reshaped = freqs.reshape(1, freqs.shape[0], 1) #reshape for multiplication of spectrogram power and frequency 
+    mean_frequency = np.sum(fft_power * freqs_reshaped, axis=1) / tot_power
+
+    # Median frequency 
+    cumulative_power = np.cumsum(fft_power, axis=1)
+    total_power = cumulative_power[:, -1, :]
+    median_frequency = np.zeros((emg_windows.shape[0],emg_windows.shape[2]))
+
+    for i in range(emg_windows.shape[0]):
+        for j in range(emg_windows.shape[2]):
+            median_frequency[i,j] = freqs[np.where(cumulative_power[i, :, j] >= total_power[i,j] / 2)[0][0]]
+
+    # Peak frequency (use np.argmax)
+    peak_frequency = freqs[np.argmax(fft_power, axis=1)]
+
+    threshold=0.01
+    ssc = np.zeros((emg_windows.shape[0],emg_windows.shape[2]))
+    for i in range(emg_windows.shape[0]):
+        for j in range(emg_windows.shape[2]):
+            # Calculate SSC with threshold
+            ssc[i, j] = np.sum((np.abs(diff[i, :-1, j]) >= threshold) &
+                           (np.abs(diff[i, 1:, j]) >= threshold) &
+                           (np.sign(diff[i, :-1, j]) != np.sign(diff[i, 1:, j])))
+
+
+    X = np.column_stack((mav, maxav, std, rms, wl, zc, ssc, mean_power, tot_power, mean_frequency, median_frequency, peak_frequency))
+
+    return X
+
+def impute_missing_values(X : np.ndarray) -> np.ndarray:
+    """
+    This function imputes missing values in the given feature matrix.
+
+    Args:
+        X (numpy array): feature matrix of shape (n_windows, n_features)
+
+    Returns:
+        X (numpy array): feature matrix with imputed missing values
+    """ 
+    
+    # Replace NaNs with 0
+    X[np.isnan(X)] = 0
+
+    # Replace inf with 0
+    X[np.isinf(X)] = 0
+
+    return X
+
+
+# ------- Exercise 11 utils functions --> To be deleted at the end of the project ------- #
 def align(X1, X2):
    """
    Given two dataframes, with indices being the time, aligns them by interpolating missing values.
@@ -148,118 +339,3 @@ def cut_datasets(EMG, Labels,val_cut, test_cut):
 
 
     return EMG_train, EMG_val, EMG_test, Labels_train, Labels_val, Labels_test
-
-def extract_time_windows(EMG,Labels, fs,win_len,step):
-# This function is used to cut the time windows from the raw EMG 
-# It return an array containing the EMG of each time window.
-# It also returns the labels corresponding to the time of the end of the window
-    """
-    This function is defined to perform an overlapping sliding window 
-    :param EMG: numpy array containing the data
-    :param Labels: numpy array containing the labels
-    :param fs: the sampling frequency of the signal
-    :param win_len: The size of the windows (in seconds)
-    :param step: The step size between windows (in seconds)
-    :return: A numpy arrays containing the windows
-    :return: A numpy array containing the labels aligned for each window
-    :note: The length of both outputs should be the same
-    """
-    
-    n,m = EMG.shape
-    win_len = int(win_len*fs)
-    start_points = np.arange(0,n-win_len,int(step*fs))
-    end_points = start_points + win_len
-
-    EMG_windows = np.zeros((len(start_points),win_len,m))
-    Labels_window = [] 
-    for i in range(len(start_points)):
-        EMG_windows[i,:,:] = EMG[start_points[i]:end_points[i],:]
-        Labels_window.append(Labels[start_points[i]])
-    
-
-    
-    
-    return EMG_windows, np.array(Labels_window)
-
-
-def calc_fft_power(EMG_windows, fs):
-    N = EMG_windows.shape[1]  # Number of points in each window
-    freqs = np.fft.rfftfreq(N, 1/fs)  # Frequency bins
-
-    # Fast Fourier Transform (FFT)
-    fft_vals = np.fft.rfft(EMG_windows, axis=1)
-    fft_power = np.abs(fft_vals) ** 2  # Power spectrum
-    return freqs[1:], fft_power[:,1:,:]
-
-
-def extract_features(EMG_windows, fs):
-    """
-    This function extracts features from raw EMG data. 
-    
-    Args:
-        EMG_windows (numpy array): EMG data in sliding of shape (n_windows, time, n_channels)
-        fs (int): sampling frequency of EMG data
-    
-    Returns:
-        X (numpy array): features of shape (n_windows, n_features)
-    """
-    # Mean absolute value (MAV), axis=1 means mean along the time axis for each window
-    mav = np.mean(np.abs(EMG_windows), axis=1)
-
-    # Maximum absolute Value (MaxAV)
-    maxav = np.max(np.abs(EMG_windows), axis=1)
-
-    # Standard Deviation (STD)
-    std = np.std(EMG_windows, axis=1)
-
-    # Root mean square (RMS)
-    rms = np.sqrt(np.mean(EMG_windows ** 2, axis=1))
-
-    # Wavelength (WL)
-    wl = np.sum(np.abs(np.diff(EMG_windows, axis=1)), axis=1) 
-
-    # Zero crossing (ZC) (hint: you can use np.diff and np.sign to evaluate the zero crossing, then sum the occurance)
-    zc = np.sum(np.diff(np.sign(EMG_windows), axis=1) != 0, axis=1)
-
-    # Slope sign changes (SSC)
-    diff = np.diff(EMG_windows, axis=1)
-    ssc = np.sum(np.diff(np.sign(diff), axis=1) != 0, axis=1)
-
-    # Get frequency and spectrogram power 
-    freqs, fft_power = calc_fft_power(EMG_windows, fs=fs)
-
-    # Mean power 
-    mean_power = np.mean(fft_power, axis=1)
-
-    # Total power
-    tot_power = np.sum(fft_power, axis=1)
-
-    # Mean frequency (sum of the product of spectrogram power and frequency, divided by total sum of spectrogram power)
-    freqs_reshaped = freqs.reshape(1, freqs.shape[0], 1) #reshape for multiplication of spectrogram power and frequency 
-    mean_frequency = np.sum(fft_power * freqs_reshaped, axis=1) / tot_power
-
-    # Median frequency 
-    cumulative_power = np.cumsum(fft_power, axis=1)
-    total_power = cumulative_power[:, -1, :]
-    median_frequency = np.zeros((EMG_windows.shape[0],EMG_windows.shape[2]))
-
-    for i in range(EMG_windows.shape[0]):
-        for j in range(EMG_windows.shape[2]):
-            median_frequency[i,j] = freqs[np.where(cumulative_power[i, :, j] >= total_power[i,j] / 2)[0][0]]
-
-    # Peak frequency (use np.argmax)
-    peak_frequency = freqs[np.argmax(fft_power, axis=1)]
-
-    threshold=0.01
-    ssc = np.zeros((EMG_windows.shape[0],EMG_windows.shape[2]))
-    for i in range(EMG_windows.shape[0]):
-        for j in range(EMG_windows.shape[2]):
-            # Calculate SSC with threshold
-            ssc[i, j] = np.sum((np.abs(diff[i, :-1, j]) >= threshold) &
-                           (np.abs(diff[i, 1:, j]) >= threshold) &
-                           (np.sign(diff[i, :-1, j]) != np.sign(diff[i, 1:, j])))
-
-
-    X = np.column_stack((mav, maxav, std, rms, wl, zc, ssc, mean_power, tot_power, mean_frequency, median_frequency, peak_frequency))
-
-    return X
