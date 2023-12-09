@@ -172,8 +172,8 @@ def calc_fft_power(emg_windows : np.array, sampling_frequency : int) -> tuple[np
         sampling_frequency (float): sampling frequency of the EMG data
     
     Returns:
-        freqs (numpy array): frequency bins
-        fft_power (numpy array): power spectrum of the FFT of the EMG data
+        freqs (numpy array): frequency bins of shape (n_freqs, )
+        fft_power (numpy array): power spectrum of the FFT of the EMG data of shape (n_windows, n_freqs, n_channels)
     """
     # Number of points in each window
     N = emg_windows.shape[1]
@@ -237,6 +237,8 @@ def extract_features(emg_windows : np.ndarray, sampling_frequency : int) -> np.n
     Returns:
         X (numpy array): features of shape (n_windows, n_features)
     """
+
+    # ---- Time features
     # Mean absolute value (MAV), axis=1 means mean along the time axis for each window
     mav = np.mean(np.abs(emg_windows), axis=1)
 
@@ -252,6 +254,7 @@ def extract_features(emg_windows : np.ndarray, sampling_frequency : int) -> np.n
     # Wavelength (WL)
     wl = np.sum(np.abs(np.diff(emg_windows, axis=1)), axis=1)
 
+    # ---- Frequency features
     # Get frequency and spectrogram power 
     freqs, fft_power = calc_fft_power(emg_windows, sampling_frequency=sampling_frequency)
 
