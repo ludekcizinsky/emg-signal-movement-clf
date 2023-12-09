@@ -4,6 +4,8 @@ import zipfile
 import os
 from tqdm import tqdm
 import scipy.io as sio
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 def unzip_and_remove(zip_folder : str) -> None:
     """
@@ -97,10 +99,27 @@ def train_val_test_split(df : pd.DataFrame, val : list, test: list) -> pd.DataFr
 
     return df
 
-def extract_time_windows(emg, labels, sampling_frequency, win_len, step) -> tuple[np.array, np.array]:
+def extract_full_window(emg : np.ndarray, labels : np.ndarray, sampling_frequency : int) -> tuple[np.array, np.array]:
+    """
+    For each stimulus, we take the whole window of data starting from the stimulus onset. This is 
+    a simplification of the sliding window approach.
+
+    Args:
+        emg (numpy array): array containing the EMG data of shape (n_samples, n_channels)
+        labels (numpy array): array containing the labels of shape (n_samples, )
+        sampling_frequency (int): sampling frequency of the EMG data
+
+    Returns:
+        emg_windows (numpy array): array containing the EMG data in windows of shape (n_windows, win_len, n_channels)
+        labels_windows (numpy array): array containing the labels in windows of shape (n_windows, )
+    """
+    pass
+
+def extract_time_windows(emg : np.ndarray, labels : np.ndarray, sampling_frequency : int, win_len : int, step : int) -> tuple[np.array, np.array]:
 
     """
-    This function is defined to extract time windows from the given data
+    This function is defined to extract time windows from the given data using the given window lenght
+    and step. The labels are assigned to the windows based on the majority of labels in the window.
 
     Args:
         emg (numpy array): array containing the EMG data of shape (n_samples, n_channels)
@@ -130,10 +149,19 @@ def extract_time_windows(emg, labels, sampling_frequency, win_len, step) -> tupl
 
     # Now assign the corresponding timepont to the given windows
     for i in range(len(start_points)):
+        # Extract the EMG data
         emg_windows[i,:,:] = emg[start_points[i]:end_points[i],:]
-        labels_windows.append(labels[start_points[i]])
+
+        # Extract the labels
+        labels_window = labels[start_points[i]:end_points[i]]
+
+        # Get the most frequent label
+        val, count = np.unique(labels_window, return_counts=True)
+        most_frequent_label = val[np.argmax(count)]
+
+        labels_windows.append(most_frequent_label)
      
-    return emg_windows, np.array(labels_windows)
+    return emg_windows, np.array(labels_windows, dtype=int)
 
 def calc_fft_power(emg_windows : np.array, sampling_frequency : int) -> tuple[np.array, np.array]:
     """
@@ -160,6 +188,44 @@ def calc_fft_power(emg_windows : np.array, sampling_frequency : int) -> tuple[np
     return freqs[1:], fft_power[:,1:,:]
 
 
+def downsample_rest_windows(data : tuple[np.ndarray, np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
+    """
+    This function downsamples the rest windows to the average length of the stimulus windows.
+
+    Args:
+        data (tuple): tuple containing the EMG data and labels
+    
+    Returns:
+        X (numpy array): Adjusted EMG data of shape (n_samples, n_channels)
+        y (numpy array): Adjusted labels of shape (n_samples, )
+    """
+
+    # Parse the data
+    X, y = data
+
+    # Get the unique labels and corresponding counts
+    _, count = np.unique(y, return_counts=True)
+
+    # We know that the labels are sorted, and 0 = Rest, therefore we first compute average of the stimulus
+    avg_count_stim = int(np.mean(count[1:]))
+
+    # Compute the number of samples to remove
+    rest_count = count[0]
+    n_samples_to_remove = rest_count - avg_count_stim
+
+    # Get the indexes of the rest periods
+    rest_index = np.where(y == 0)[0]
+
+    # Randomly choose the indexes to remove
+    remove_index = np.random.choice(rest_index, size=n_samples_to_remove, replace=False)
+
+    # Remove the samples
+    X = np.delete(X, remove_index, axis=0)
+    y = np.delete(y, remove_index, axis=0)
+
+    return X, y 
+
+
 def extract_features(emg_windows : np.ndarray, sampling_frequency : int) -> np.ndarray:
     """
     This function extracts features from raw EMG data. 
@@ -184,14 +250,7 @@ def extract_features(emg_windows : np.ndarray, sampling_frequency : int) -> np.n
     rms = np.sqrt(np.mean(emg_windows ** 2, axis=1))
 
     # Wavelength (WL)
-    wl = np.sum(np.abs(np.diff(emg_windows, axis=1)), axis=1) 
-
-    # Zero crossing (ZC) (hint: you can use np.diff and np.sign to evaluate the zero crossing, then sum the occurance)
-    zc = np.sum(np.diff(np.sign(emg_windows), axis=1) != 0, axis=1)
-
-    # Slope sign changes (SSC)
-    diff = np.diff(emg_windows, axis=1)
-    ssc = np.sum(np.diff(np.sign(diff), axis=1) != 0, axis=1)
+    wl = np.sum(np.abs(np.diff(emg_windows, axis=1)), axis=1)
 
     # Get frequency and spectrogram power 
     freqs, fft_power = calc_fft_power(emg_windows, sampling_frequency=sampling_frequency)
@@ -218,19 +277,85 @@ def extract_features(emg_windows : np.ndarray, sampling_frequency : int) -> np.n
     # Peak frequency (use np.argmax)
     peak_frequency = freqs[np.argmax(fft_power, axis=1)]
 
-    threshold=0.01
-    ssc = np.zeros((emg_windows.shape[0],emg_windows.shape[2]))
-    for i in range(emg_windows.shape[0]):
-        for j in range(emg_windows.shape[2]):
-            # Calculate SSC with threshold
-            ssc[i, j] = np.sum((np.abs(diff[i, :-1, j]) >= threshold) &
-                           (np.abs(diff[i, 1:, j]) >= threshold) &
-                           (np.sign(diff[i, :-1, j]) != np.sign(diff[i, 1:, j])))
-
-
-    X = np.column_stack((mav, maxav, std, rms, wl, zc, ssc, mean_power, tot_power, mean_frequency, median_frequency, peak_frequency))
+    X = np.column_stack((mav, maxav, std, rms, wl, mean_power, tot_power, mean_frequency, median_frequency, peak_frequency))
 
     return X
+
+def drop_missing_values(data : tuple[np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
+    """
+    This function drops the samples with missing values.
+
+    Args:
+        data (tuple): tuple containing the EMG data and labels
+    
+    Returns:
+        X (numpy array): Adjusted EMG data of shape (n_samples, n_channels)
+        y (numpy array): Adjusted labels of shape (n_samples, )
+    """
+
+    # Parse the data
+    X, y = data
+
+    # Get the indexes of the missing values
+    missing_index = np.where(np.isnan(X))[0]
+
+    # Remove the samples
+    X = np.delete(X, missing_index, axis=0)
+    y = np.delete(y, missing_index, axis=0)
+
+    return X, y
+
+def reduce_dimensionality(trainingset, validationset ,testset, threshold_variance=0.95):
+    """
+    This function reduces the dimensionality of a dataset according to the optimal number of principal components obtained from PCA.
+
+    Args:
+        data: numpy array. Dataset.
+        threshold_variance: float between 0 and 1. The percentage of information that should contain in the optimal number of principal components.
+
+    Returns:
+        reduced_data: numpy array. Dataset with reduced dimensionality.
+    """
+
+    # Ensure data is a 2D array
+    if len(trainingset.shape) == 1:
+        trainingset = trainingset.reshape(-1, 1)
+
+    pca = PCA()
+    pca.fit(trainingset)
+    exp_var_cumul = np.cumsum(pca.explained_variance_ratio_)
+
+    # Plot the explained variance
+    plt.plot(range(1, exp_var_cumul.shape[0] + 1), exp_var_cumul, marker='o', linestyle='-', color='b')
+    plt.title('Explained Variance per Principal Component')
+    plt.xlabel('Number of Principal Components')
+    plt.ylabel('Cumulative Explained Variance')
+
+    # Set x-axis ticks to integers
+    plt.xticks(np.arange(1, len(exp_var_cumul) + 1, 1))
+
+    plt.show()
+
+    # Determine the optimal number of components based on a threshold (e.g., 95% variance)
+    optimal_components = next((i for i, value in enumerate(exp_var_cumul) if value >= threshold_variance), len(exp_var_cumul))
+
+    if optimal_components is not None:
+        optimal_components += 1  # Add 1 to convert from zero-based index to the actual count
+        print(f"The optimal number of components for {threshold_variance * 100}% variance retention is: {optimal_components}")
+
+        # Reduce dimensionality
+        pca.n_components = optimal_components
+        reduced_trainingset = pca.transform(trainingset)
+        reduced_validationset = pca.transform(validationset)
+        reduced_testset = pca.transform(testset)
+        
+
+        return reduced_trainingset [:, :optimal_components], reduced_validationset[:, :optimal_components] ,reduced_testset[:, :optimal_components]
+    
+    else:
+        print(f"No suitable number of components found for {threshold_variance * 100}% variance retention.")
+        return np.array([]), np.array([]),
+
 
 def impute_missing_values(X : np.ndarray) -> np.ndarray:
     """
