@@ -8,13 +8,11 @@ In this mini project, we are supposed to do the following tasks:
 
 - [X] Extract the same set of features across 10 different subjects.
 
-- [ ] Look at the typical values of those features across the same set of movements for different subjects.
-What do you see? Are there any regularities between the different subjects? What
-are some possible reasons for similarity/dissimilarity?
+- [X] Look at the typical values of those features across the same set of movements for different subjects. What do you see? Are there any regularities between the different subjects? What are some possible reasons for similarity/dissimilarity?
 
 - [X] Perform classification (use a method of your choice) on different subjects separately.
 
-- [ ] Perform analysis to determine the importance of the features to the classification. Compare this ranking across the different subjects. Are the features stable?
+- [X] Perform analysis to determine the importance of the features to the classification. Compare this ranking across the different subjects. Are the features stable?
 
 - [ ] Train a classification model on a set of subjects and test it on a subject that does not
 belong to that set. Evaluate the performance. How does it compare to training on that
@@ -23,6 +21,8 @@ subject and testing on the same subject directly?
 - [ ] Repeat the training by varying the number of subjects in the training set. Discuss how the
 number of subjects used in the training set could affect the classification
 performance.
+
+---
 
 (Optional - was not part of the assigment):
 
