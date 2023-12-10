@@ -29,6 +29,7 @@
 
 % Tables
 \usepackage{booktabs}
+\usepackage{siunitx}
 
 % Figures
 \usepackage{graphicx}
@@ -121,27 +122,27 @@ As the kde plots in figure \ref{fig:featext} suggests, the extracted time featur
 These could be possibly explained via variations in physiological factors, such as muscle strength, anatomy, or motor control strategies.
 
 \section{Methods}
-We start with training and evaluating chosen class of models on individual subjects. This experiment should 
-confirm our base hypothesis that the chosen models are capable of generating from given subject's training data to the corresponding validation data.
-In addition, we will assess whether the models trained on individual subjects use similar features. Finally, we will find set of hyper-parameters for each
-model and evaluate its peformance on the test data of the corresponding subject. In the second part of our experiment, we will choose the best performing model and train it on the selected 
-subset of subjects. Finally, we will evaluate its performance on data of subjects which were not seen during training phase. In addition,
-we will vary the number of subjects in training dataset to see the impact on model's generalization ability.
+We start with training and evaluating chosen set of models on individual subjects. Namely, we use Logistic Regression (\texttt{LR}), K-Nearest Neighbors (\texttt{KNN})
+and Random Forest (\texttt{RF}). We will conduct extensive grid search to find the optimal hyper-parameters for each model. 
+This part of the experiment should confirm our base hypothesis that the chosen models are capable of generalising from given subject's training data to the corresponding validation data.
+In addition, we will assess whether the models trained on individual subjects use similar features. In the second part of our experiment, we will choose the best performing model from the previous phase 
+and train it on the selected  subset of subjects. Finally, we will evaluate its performance on data of subjects which were not seen during training phase.
+We will vary the number of subjects in training dataset to observe the impact on the model's generalization capabilities.
 
 
 \section{Results}
 \begin{table}[!ht]
     \centering
-    \begin{tabular}{lrrrr}
+    \begin{tabular}{llrrrr}
         \toprule
-        \textbf{model} & \textbf{Val Acc} & \textbf{CI} & \textbf{Test Acc} & \textbf{CI} \\
+        \textbf{Model} & \textbf{Best Configuration Accross Subjects} & \textbf{Val Acc} & \textbf{95CI} & \textbf{Test Acc} & \textbf{95CI} \\
         \midrule
-        Random Forest & 0.939 & 0.008 & 0.816 & 0.037 \\
-        Logistic Regression & 0.798 & 0.029 & 0.739 & 0.045 \\
-        K-Nearest Neighbors & 0.831 & 0.021 & 0.654 & 0.051 \\
+        RF & \texttt{MaxDepth=}15,\texttt{NofEstimators=}300, \texttt{MaxFeat=}\texttt{sqrt} & 0.94 & $\pm$0.01 & 0.82 & $\pm$0.04 \\
+        LR & \texttt{Loss=hinge}, \texttt{Penalty=L1}, \texttt{Alpha=}=$1e^{-4}$, \texttt{MaxIter=}270 & 0.80 & $\pm$0.03 & 0.74 & $\pm$0.05 \\
+        KNN & \texttt{NofNeighbors=}2, \texttt{Weights=distance} &0.83 & $\pm$0.02 & 0.65 & $\pm$0.05 \\
         \bottomrule
     \end{tabular}
-    \caption{Results of the first experiment.}
+    \caption{Results of training and evaluating the chosen models on individual subjects. The best configuration for each model is a mean of the numeric hyper-parameters, and the most frequent value for the categorical hyper-parameters.}
     \label{tab:results1}
 \end{table}
 

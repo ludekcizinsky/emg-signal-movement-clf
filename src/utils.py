@@ -308,6 +308,38 @@ def drop_missing_values(data : tuple[np.ndarray]) -> tuple[np.ndarray, np.ndarra
 
     return X, y
 
+def collect_subject_data(subject_ids : list[int], subjects_features : dict) -> tuple[np.ndarray, np.ndarray]:
+
+    """
+    This function is defined to collect the data of all subjects in one array
+
+    Args:
+        subject_ids (list): list of subject ids
+        subjects_features (dict): dictionary containing the features of each subject
+    
+    Returns:
+        X_all (numpy array): array containing the EMG data of all subjects of shape (n_samples, n_channels)
+        y_all (numpy array): array containing the labels of all subjects of shape (n_samples, )
+    """
+
+    X_all, y_all = None, None
+    for subject in subject_ids:
+        # Get the data for the subject
+        X_train, y_train, X_val, y_val, X_test, y_test = subjects_features[subject]
+
+        # Concatenate the all the data
+        X = np.concatenate([X_train, X_val, X_test], axis=0)
+        y = np.concatenate([y_train, y_val, y_test], axis=0)
+
+        # Concatenate the data for all subjects
+        if X_all is None:
+            X_all, y_all = X, y
+        else:
+            X_all = np.concatenate([X_all, X], axis=0)
+            y_all = np.concatenate([y_all, y], axis=0)
+         
+    return X_all, y_all
+
 def reduce_dimensionality(trainingset, validationset ,testset, threshold_variance=0.95):
     """
     This function reduces the dimensionality of a dataset according to the optimal number of principal components obtained from PCA.
