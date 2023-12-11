@@ -29,3 +29,9 @@ performance.
 - [ ] Do people with higher BMI have higher EMG?
 
 > Furthermore, regression analysis on the classification results reveals that classification accuracy is negatively correlated with a subject’s Body Mass Index (BMI).
+
+- [ ] In the original paper, they use the boxplots to measure variability of features accross subjects --> maybe use the boxplots instead (already have those), In addition, they also looked at the boxplot of the 12 stimulus accross repetitions to asses the variability. They also did sEMG amplitude as a function of repetition and observed that the amplitude decreases with repetition. --> these three plots we could have instead of the one big plot we have now and kinda showcase the limitations/challenges of the data.
+
+- [ ] while the movement label is defined as the movement type at the moment of the most recent sample within a window --> start of a window
+
+- [ ] Subsampling the training set by a factor of 10 
