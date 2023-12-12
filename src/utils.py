@@ -99,21 +99,79 @@ def train_val_test_split(df : pd.DataFrame, val : list, test: list) -> pd.DataFr
 
     return df
 
-def extract_full_window(emg : np.ndarray, labels : np.ndarray, sampling_frequency : int) -> tuple[np.array, np.array]:
+def extract_trial_windows(emg: np.ndarray, df : pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     """
-    For each stimulus, we take the whole window of data starting from the stimulus onset. This is 
-    a simplification of the sliding window approach.
+    This function is defined to extract the trial windows from the given data. The trial windows are defined as the 
+    unique stimulus and repetition combinations.
 
     Args:
         emg (numpy array): array containing the EMG data of shape (n_samples, n_channels)
-        labels (numpy array): array containing the labels of shape (n_samples, )
-        sampling_frequency (int): sampling frequency of the EMG data
-
+        data (pd.DataFrame): dataframe containing the data
+    
     Returns:
         emg_windows (numpy array): array containing the EMG data in windows of shape (n_windows, win_len, n_channels)
         labels_windows (numpy array): array containing the labels in windows of shape (n_windows, )
     """
-    pass
+
+    # Get the labels and repetitions
+    labels = df['Stimulus'].values
+    repetitions = df['Repetition'].values
+
+    # Init the stimuli and repetitions
+    curr_stim, curr_rep = None, None
+
+    # Init the window id as a list
+    window_ids = []
+
+    curr_id = 0
+    for y, rep in zip(labels, repetitions):
+
+        # Init the current stimulus and repetition only the first time
+        if curr_stim is None:
+            curr_rep, curr_stim = rep, y    
+
+        # No change, we stick to the current id and save it
+        if (y == curr_stim) and (rep == curr_rep):
+            window_ids.append(curr_id)
+        
+        # Change 
+        else:
+            # Update the current stimulus and repetition
+            curr_stim, curr_rep = y, rep
+
+            # Update the window id
+            curr_id += 1
+
+            # Save the window id
+            window_ids.append(curr_id)
+
+    # Add the window ids to the dataframe
+    df.loc[:, "Window"] = window_ids
+
+    # Determine the minimum length across all windows
+    min_length = df.groupby('Window').size().min()
+
+    # Determine the number of windows, timepoints, and features
+    n_windows = len(df['Window'].unique())
+    feat_dim = emg.shape[1]
+
+    # Create an empty 3D array
+    result_array = np.empty((n_windows, min_length, feat_dim))
+    labels = np.zeros((n_windows, ), dtype=int)
+
+    # Iterate over each window and fill the 3D array
+    for i, window_value in enumerate(df['Window'].unique()):
+        # Extract indices of timepoints belonging to the current window
+        window_indices = df[df['Window'] == window_value].index[:min_length]
+        
+        # Assign the corresponding rows from the 2D array to the 3D array
+        result_array[i, :, :] = emg[window_indices, :]
+
+        # Get the corresponding stimulus
+        stimulus = df[df['Window'] == window_value]['Stimulus'].values[0]
+        labels[i] = stimulus
+    
+    return result_array, labels
 
 def extract_time_windows(emg : np.ndarray, labels : np.ndarray, sampling_frequency : int, win_len : int, step : int) -> tuple[np.array, np.array]:
 
