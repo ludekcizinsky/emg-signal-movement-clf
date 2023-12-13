@@ -18,9 +18,11 @@ In this mini project, we are supposed to do the following tasks:
 belong to that set. Evaluate the performance. How does it compare to training on that
 subject and testing on the same subject directly?
 
-- [ ] Repeat the training by varying the number of subjects in the training set. Discuss how the
+- [X] Repeat the training by varying the number of subjects in the training set. Discuss how the
 number of subjects used in the training set could affect the classification
 performance.
+
+- [ ] Sauce up the title of the paper
 
 ---
 
