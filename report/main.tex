@@ -85,7 +85,7 @@ we implemented a low-pass filter on the sEMG signals, with a cutoff frequency of
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=1\textwidth]{../figures/preprocessing.pdf}
+\includegraphics[width=1\textwidth]{figures/report/preprocessing.pdf}
 \caption{The first plot illustrates the preprocessed sEMG signal for the initial subject across one of the 10 channels. 
 The subsequent plot provides a detailed examination of the \texttt{Index flexion} finger movement and its 10 repetitions.}
 \label{fig:preprocessing}
@@ -102,7 +102,7 @@ we assigned the rest period to the same split as the corresponding repetition.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=1\textwidth]{../figures/downsampling.pdf}
+    \includegraphics[width=1\textwidth]{figures/report/downsampling.pdf}
     \caption{Distribution of the stimuli classes accross splits for the 17th subject.}
     \label{fig:downsampling}
 \end{figure}
@@ -121,7 +121,7 @@ we applied standard scaling to ensure that all features have zero mean and unit 
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=1\textwidth]{../figures/inter_sub_var.pdf}
+    \includegraphics[width=1\textwidth]{figures/report/inter_sub_var.pdf}
     \caption{Variability of selected features of Index Flexion stimuli, \texttt{MAV} and \texttt{MaxAV}, accross subjects. 
     The boxplot is showing median, 25th and 75th percentiles, and max-min of the features.}
     \label{fig:feat_var}
@@ -178,7 +178,7 @@ values of the regularization hyper-parameters.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=1\textwidth]{../figures/fig_feat_imp.pdf}
+    \includegraphics[width=1\textwidth]{figures/report/feature_importance.pdf}
     \caption{Both figures depict the feature permutation importance for the \texttt{SR} model. 
     The left plot illustrates the correlation among individual subjects' feature importance, 
     while the right plot showcases the significance of each feature for every subject}
@@ -194,7 +194,7 @@ Consequently, it's expected that models trained on individual subjects utilize d
 
 \begin{wrapfigure}[12]{r}{0.5\textwidth}
     \centering
-    \includegraphics[width=0.5\textwidth]{../figures/fig_k_vs_perf.pdf}
+    \includegraphics[width=0.5\textwidth]{figures/report/k_vs_perf.pdf}
     \caption{Test Accuracy of the \texttt{RF} model trained on different number of subjects.}
     \label{fig:k_vs_perf}
 \end{wrapfigure}
