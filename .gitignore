@@ -8,7 +8,6 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-build/
 develop-eggs/
 dist/
 downloads/
@@ -177,3 +176,7 @@ figures/ml_pipeline.png
 
 # Notebooks
 notebooks/Exercise11.ipynb
+
+# Ignore the build folder except from the main.pdf inside it
+report/build/*
+!report/build/main.pdf
