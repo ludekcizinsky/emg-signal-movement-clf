@@ -123,6 +123,7 @@ These could be possibly explained via variations in physiological factors, such 
 This is a known challenge when working with sEMG data which has been recently tackled in various works 
 via deep learning based methods \cite{dl2, dl1}. 
 
+% TODO: add standard scaling to the pipeline!
 \section{Methods}
 We start with training and evaluating chosen set of models on individual subjects. Namely, we use Logistic Regression (\texttt{LR}), K-Nearest Neighbors (\texttt{KNN})
 and Random Forest (\texttt{RF}). We will conduct extensive grid search to find the optimal hyper-parameters for each model. 
@@ -160,9 +161,20 @@ regularisation, for our models, it played only a minor role (e.g. \texttt{SR}'s 
 \begin{figure}[h]
     \centering
     \includegraphics[width=1\textwidth]{../figures/fig_feat_imp.pdf}
-    \caption{STh}
+    \caption{Both figures depict feature permutation importance for the \texttt{SF} 
+    model. The left plot illustrates the correlation among individual subjects' feature 
+    importance, while the right plot showcases the importance of each feature for every subject.}
     \label{fig:feat_imp}
 \end{figure}
+
+Figure \ref{fig:feat_imp} shows that the feature importance varies accross subjects. The left plot
+suggests that there is relatively high correlation in how each subject ranks the features. However,
+from the right plot, we can see that the high correlation could be likely explained by the 
+last 50 features which are ranked very low by all subjects. In contrast, for the first 
+50 features, there is a significant variation in the ranking. This is in line 
+with the Figure \ref{fig:feat_var} that shows variability in the individual feature values
+accross subjects, therefore, it is not surprising that the models trained on individual subjects
+use different features.
 
 
 \newpage
