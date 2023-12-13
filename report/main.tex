@@ -14,6 +14,7 @@
 
 % Page layout
 \usepackage[a4paper,margin=0.75in]{geometry}
+\usepackage{wrapfig}
 
 % Math
 \usepackage{mathptmx}  
@@ -176,6 +177,29 @@ with the Figure \ref{fig:feat_var} that shows variability in the individual feat
 accross subjects, therefore, it is not surprising that the models trained on individual subjects
 use different features.
 
+\begin{wrapfigure}{r}{0.5\textwidth}
+    \centering
+    \includegraphics[width=0.5\textwidth]{../figures/fig_k_vs_perf.pdf}
+    \caption{Test Accuracy of the \texttt{RF} model trained on different number of subjects.}
+    \label{fig:k_vs_perf}
+\end{wrapfigure}
+
+Figure \ref{fig:k_vs_perf} shows the results of our second experiment where we train \texttt{RF}
+on a chosen set of subjects and evaluate on the set aside test set. As we would expect, training 
+on small number of subjects results in poor generalization performance. However, 
+training on more than 10 subjects results in a significant improvement in performance. Nevertheless,
+it is important to take into account the wide confidence interval, which suggests that the model's performance
+is highly dependent to how similar are training and test subjects.
+
+
+\section{Conclusion}
+In this project, we have evaluated the generalization capabilities of various classification models on the NinaPro dataset DB1.
+In the first part of our experiment, we have trained and evaluated the chosen models on individual subjects. We were able to achieve
+competitive test accuracy 81 \% with the \texttt{RF} model. In addition, we have shown that the models trained on individual subjects
+use different features. In the second part of our experiment, we have shown that the model's performance significantly improves
+when trained on more than 10 subjects. However, the wide confidence interval suggests that the performance is highly dependent 
+on the similarity between training and test subjects. Future work might investigate use of deep learning based methods to improve
+the inter subject generalization capabilities of the models.
 
 \newpage
 \bibliographystyle{abbrv}
