@@ -112,14 +112,16 @@ Additional, in the frequency domain, we considered Mean Power, Total Power, Mean
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=1\textwidth]{../figures/features/time/kde/Index flexion.png}
-    \caption{KDE plot estimates for distribution of time features for randomly chosen 5 subjects for \texttt{Index Flexion}.}
-    \label{fig:featext}
+    \includegraphics[width=1\textwidth]{../figures/inter_sub_var.pdf}
+    \caption{Variability of selected features of Index Flexion stimuli, \texttt{MAV} and \texttt{MaxAV}, accross subjects. Boxplot showing median, 25th and 75th percentiles, and max-min of the features.}
+    \label{fig:feat_var}
 \end{figure}
 
 % TODO: perhaps would be better if we gave more precise answer to why these difference occur
-As the kde plots in figure \ref{fig:featext} suggests, the extracted time features for the chosen stimuli slightly differ accorss subjects.
-These could be possibly explained via variations in physiological factors, such as muscle strength, anatomy, or motor control strategies.
+As the Figure \ref{fig:feat_var} shows, the extracted time features for the chosen stimuli significantly differ accross subjects.
+These could be possibly explained via variations in physiological factors, such as muscle strength, anatomy, or motor control strategies. 
+This is a known challenge when working with sEMG data which has been recently tackled in various works 
+via deep learning based methods \cite{dl2, dl1}. 
 
 \section{Methods}
 We start with training and evaluating chosen set of models on individual subjects. Namely, we use Logistic Regression (\texttt{LR}), K-Nearest Neighbors (\texttt{KNN})
@@ -130,26 +132,38 @@ and train it on the selected  subset of subjects. Finally, we will evaluate its 
 We will vary the number of subjects in training dataset to observe the impact on the model's generalization capabilities.
 
 
-\section{Results}
-\begin{table}[!ht]
+\section{Results and Discussion}
+\begin{table}[!h]
     \centering
-    \begin{tabular}{llrrrr}
+    \begin{tabular}{llr}
         \toprule
-        \textbf{Model} & \textbf{Best Configuration Accross Subjects} & \textbf{Val Acc} & \textbf{95CI} & \textbf{Test Acc} & \textbf{95CI} \\
+        \textbf{Model} & \textbf{Best Configuration Accross Subjects} & \textbf{Test Acc $\pm$ 95CI} \\
         \midrule
-        RF & \texttt{MaxDepth=}15,\texttt{NofEstimators=}300, \texttt{MaxFeat=}\texttt{sqrt} & 0.94 & $\pm$0.01 & 0.82 & $\pm$0.04 \\
-        LR & \texttt{Loss=hinge}, \texttt{Penalty=L1}, \texttt{Alpha=}=$1e^{-4}$, \texttt{MaxIter=}270 & 0.80 & $\pm$0.03 & 0.74 & $\pm$0.05 \\
-        KNN & \texttt{NofNeighbors=}2, \texttt{Weights=distance} &0.83 & $\pm$0.02 & 0.65 & $\pm$0.05 \\
+        Random Forest & \texttt{MaxDepth=}15,\texttt{NofEstimators=}300, \texttt{MaxFeat=}\texttt{sqrt} & $\mathbf{0.82 \pm0.04}$ \\
+        Softmax Regression & \texttt{Loss=hinge}, \texttt{Penalty=L1}, \texttt{Alpha=}=$1e^{-4}$, \texttt{MaxIter=}270 &  $0.74 \pm0.05$ \\
+        K-Nearest Neighbors & \texttt{NofNeighbors=}2, \texttt{Weights=distance} &  $0.65 \pm0.05$ \\
         \bottomrule
     \end{tabular}
     \caption{Results of training and evaluating the chosen models on individual subjects. The best configuration for each model is a mean of the numeric hyper-parameters, and the most frequent value for the categorical hyper-parameters.}
     \label{tab:results1}
 \end{table}
 
-Here we will describe the results of our experiments. % TODO: need to second table with the results of the second experiment
+Table \ref{tab:results1} shows that the best performing model is by far \texttt{RF} which achieved 82 \%.
+This is a comparable performance to the one reported by Atzori et al. \cite{ninapro},
+however, our task for simplicity only consists of 12 movements instead of 52. Interestingly,
+we were able to achieve solid performance even with the \texttt{SR} which is a linear model.
+This suggests high quality of the extracted features making the prediction task easier for the model.
+Last but not least, while it is important in general to consider 
+regularisation, for our models, it played only a minor role (e.g. \texttt{SR}'s \texttt{Alpha} being only $1e^{-4}$), as the best configuration show.
 
-\section{Discussion}
-And here we will discuss the results of our experiments.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{../figures/fig_feat_imp.pdf}
+    \caption{STh}
+    \label{fig:feat_imp}
+\end{figure}
+
 
 \newpage
 \bibliographystyle{abbrv}
