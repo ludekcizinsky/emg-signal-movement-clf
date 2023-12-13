@@ -1,5 +1,5 @@
 
-## 🤌 emg-signal-movement-clf
+## 🤌 sEMG Signal Hand Movement Classification
 In recent years, machine learning-based approaches have demonstrated success across various fields,  including the medical domain. 
 This project focuses on evaluating different classification models capable of predicting the type of movement executed by a patient based on surface electromyography (sEMG) signals recorded  from the patient's forearm. The dataset utilized for this project is the [NinaPro dataset DB1](https://ninapro.hevs.ch/), comprising sEMG signals recorded from 27 patients while performing various hand movements.
 
