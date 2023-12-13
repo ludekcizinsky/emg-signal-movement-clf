@@ -1,11 +1,19 @@
+"""
+This file contains utility functions for the project.
+These functions are used in both preprocessing and classification notebooks.
+"""
+
+
+# Data structures
 import numpy as np
 import pandas as pd
+
+# Utils
 import zipfile
 import os
 from tqdm import tqdm
 import scipy.io as sio
-import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
+
 
 def unzip_and_remove(zip_folder : str) -> None:
     """
@@ -397,163 +405,3 @@ def collect_subject_data(subject_ids : list[int], subjects_features : dict) -> t
             y_all = np.concatenate([y_all, y], axis=0)
          
     return X_all, y_all
-
-def reduce_dimensionality(trainingset, validationset ,testset, threshold_variance=0.95):
-    """
-    This function reduces the dimensionality of a dataset according to the optimal number of principal components obtained from PCA.
-
-    Args:
-        data: numpy array. Dataset.
-        threshold_variance: float between 0 and 1. The percentage of information that should contain in the optimal number of principal components.
-
-    Returns:
-        reduced_data: numpy array. Dataset with reduced dimensionality.
-    """
-
-    # Ensure data is a 2D array
-    if len(trainingset.shape) == 1:
-        trainingset = trainingset.reshape(-1, 1)
-
-    pca = PCA()
-    pca.fit(trainingset)
-    exp_var_cumul = np.cumsum(pca.explained_variance_ratio_)
-
-    # Plot the explained variance
-    plt.plot(range(1, exp_var_cumul.shape[0] + 1), exp_var_cumul, marker='o', linestyle='-', color='b')
-    plt.title('Explained Variance per Principal Component')
-    plt.xlabel('Number of Principal Components')
-    plt.ylabel('Cumulative Explained Variance')
-
-    # Set x-axis ticks to integers
-    plt.xticks(np.arange(1, len(exp_var_cumul) + 1, 1))
-
-    plt.show()
-
-    # Determine the optimal number of components based on a threshold (e.g., 95% variance)
-    optimal_components = next((i for i, value in enumerate(exp_var_cumul) if value >= threshold_variance), len(exp_var_cumul))
-
-    if optimal_components is not None:
-        optimal_components += 1  # Add 1 to convert from zero-based index to the actual count
-        print(f"The optimal number of components for {threshold_variance * 100}% variance retention is: {optimal_components}")
-
-        # Reduce dimensionality
-        pca.n_components = optimal_components
-        reduced_trainingset = pca.transform(trainingset)
-        reduced_validationset = pca.transform(validationset)
-        reduced_testset = pca.transform(testset)
-        
-
-        return reduced_trainingset [:, :optimal_components], reduced_validationset[:, :optimal_components] ,reduced_testset[:, :optimal_components]
-    
-    else:
-        print(f"No suitable number of components found for {threshold_variance * 100}% variance retention.")
-        return np.array([]), np.array([]),
-
-
-def impute_missing_values(X : np.ndarray) -> np.ndarray:
-    """
-    This function imputes missing values in the given feature matrix.
-
-    Args:
-        X (numpy array): feature matrix of shape (n_windows, n_features)
-
-    Returns:
-        X (numpy array): feature matrix with imputed missing values
-    """ 
-    
-    # Replace NaNs with 0
-    X[np.isnan(X)] = 0
-
-    # Replace inf with 0
-    X[np.isinf(X)] = 0
-
-    return X
-
-
-# ------- Exercise 11 utils functions --> To be deleted at the end of the project ------- #
-def align(X1, X2):
-   """
-   Given two dataframes, with indices being the time, aligns them by interpolating missing values.
-
-
-   Args:
-      X1 (DataFrame): Data to align
-      X2 (DataFrame): Labels to align
-
-   Returns:
-      X1 (DataFrame): Data aligned
-      X2 (DataFrame): Labels aligned
-
-   """
-
-   data = X1.join(X2, how = 'outer', sort = True)
-   #Interpolate missing values (will interpolate labels but also X1)
-   data = data.interpolate('index', limit_area ='inside')
-
-   #Get only the data interpolated (remove NaN)
-   data = data.loc[data.iloc[:,0].dropna().index.intersection(data.iloc[:,-1].dropna().index)]
-
-   #Remove original labels index (X1 was interpolated at these rows, we don't want it)
-   data = data[~data.index.isin(X2.index.intersection(data.index))]
-
-   #X back but cut with labels
-   X1 = data[X1.columns]
-
-   #Labels and columns of subject and condition
-   X2 = data[X2.columns]
-
-   #Resolve some align issues
-   X2 = X2.round(decimals=0)
-   X2[(X2['Right_Hand_channel1'] == 0) & (X2['Right_Hand_channel2'] == 1) &  
-      (X2['Right_Hand_channel3'] == 2) & (X2['Right_Hand_channel4'] == 2) &  
-      (X2['Right_Hand_channel5'] == 2) & (X2['Right_Hand_channel6'] == 2)] = [0,0,2,2,2,2]
-
-   return X1,X2
-
-def find_nth_repetition(Labels,n):
-    """
-    This function is defined to find the nth repetition of a given action
-    :param action: string containing the action to be found
-    :param n: integer containing the number of repetition to be found
-    :return: integer containing the index of the nth repetition of the given action
-    """
-    
-    unique_actions = np.unique(Labels)
-    action_indices = {action: [] for action in unique_actions}
-    last_action = None
-
-    for i, action in enumerate(Labels):
-        if action != last_action:
-            action_indices[action].append(i)
-            last_action = action
-    
-    nth_repeat_indices = {}
-    for action, indices in action_indices.items():
-        if len(indices) >= n:
-            nth_repeat_indices[action] = indices[n-1]
-        else:
-            nth_repeat_indices[action] = None 
-    
-    return nth_repeat_indices
-
-
-def cut_datasets(EMG, Labels,val_cut, test_cut):
-
-    """
-    This function is defined to cut the data in three sets
-    :param EMG: pandas DataFrame containing the data
-    :param Targets: pandas DataFrame containing the targets
-    :param val_cut: information on how/where to cut the dataset to obtain the validation set
-    :param test_cut: information on how/where to cut the dataset to obtain the test set
-    :return: 6 pandas DataFrames (or numpy arrays) containing EMG and targets of each sets
-    """
-
-    EMG_train = EMG[:val_cut]
-    EMG_val = EMG[val_cut:test_cut]
-    EMG_test = EMG[test_cut:]
-    Labels_train = Labels[:val_cut]
-    Labels_val = Labels[val_cut:test_cut]
-    Labels_test = Labels[test_cut:]
-
-
-    return EMG_train, EMG_val, EMG_test, Labels_train, Labels_val, Labels_test
