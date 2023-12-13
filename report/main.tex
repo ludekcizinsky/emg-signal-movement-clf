@@ -83,7 +83,7 @@ It is important to note that the sEMG signals had already undergone preprocessin
 utilizing a Root Mean Square (RMS) filter. Therefore, we adapted the approach taken by Atzori et al. \cite{ninapro}, i.e., 
 we implemented a low-pass filter on the sEMG signals, with a cutoff frequency of $5 Hz$, employing a zero-phase second-order Butterworth filter.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=1\textwidth]{../figures/preprocessing.pdf}
 \caption{The first plot illustrates the preprocessed sEMG signal for the initial subject across one of the 10 channels. 
@@ -100,7 +100,7 @@ This approach ensures that the model is trained and evaluated on the representat
 Notably, since each repetition of a given stimuli is associated with the rest period,
 we assigned the rest period to the same split as the corresponding repetition.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=1\textwidth]{../figures/downsampling.pdf}
     \caption{Distribution of the stimuli classes accross splits for the 17th subject.}
@@ -119,7 +119,7 @@ Mean Absolute Value (\texttt{MAV}), Maximum Absolute Value (\texttt{MaxAV}), Wav
 Additional, in the frequency domain, we considered Mean Power, Total Power, Mean Frequency, Median Frequency, and Peak Frequency. Prior to inputting the features to the model,
 we applied standard scaling to ensure that all features have zero mean and unit variance. 
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=1\textwidth]{../figures/inter_sub_var.pdf}
     \caption{Variability of selected features of Index Flexion stimuli, \texttt{MAV} and \texttt{MaxAV}, accross subjects. 
@@ -150,7 +150,7 @@ for the test accuracy. This phase of the experiment aims to validate our second 
 performance improves with an increasing number of training subjects.
 
 \section{Results and Discussion}
-\begin{table}[!h]
+\begin{table}[ht]
     \centering
     \begin{tabular}{llr}
         \toprule
@@ -176,7 +176,7 @@ making the prediction task easier for the model. Last but not least, while it is
 in general, to consider regularization, for our models, it played only a minor role given the low 
 values of the regularization hyper-parameters.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=1\textwidth]{../figures/fig_feat_imp.pdf}
     \caption{Both figures depict the feature permutation importance for the \texttt{SR} model. 
